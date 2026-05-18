@@ -12,6 +12,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import LandingScreen from "./screens/LandingScreen";
 import HomeScreen from "./screens/HomeScreen";
 import ResultScreen from "./screens/ResultScreen";
 import BookingScreen from "./screens/BookingScreen";
@@ -30,7 +31,7 @@ export default function App() {
       <NavigationContainer>
         <StatusBar style="light" />
         <Stack.Navigator
-          initialRouteName="HomeScreen"
+          initialRouteName="LandingScreen"
           screenOptions={{
             headerShown: false,
             cardStyle: { backgroundColor: "#0D1B2A" },
@@ -41,6 +42,11 @@ export default function App() {
             }),
           }}
         >
+          <Stack.Screen
+            name="LandingScreen"
+            component={LandingScreen}
+            options={{ headerShown: false, animation: 'fade' }}
+          />
           <Stack.Screen name="HomeScreen" component={HomeScreen} />
           <Stack.Screen name="ResultScreen" component={ResultScreen} />
           <Stack.Screen name="BookingScreen" component={BookingScreen} />

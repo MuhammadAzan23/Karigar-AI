@@ -12,6 +12,7 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 
 const C = {
@@ -205,9 +206,23 @@ export default function HomeScreen({ navigation }) {
         >
           {/* HEADER SECTION */}
           <View style={styles.headerRow}>
-            <View>
-              <Text style={styles.logoText}>⚙️ KARIGAR AI</Text>
-              <Text style={styles.subtext}>Aap ko kya chahiye?</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                activeOpacity={0.8}
+                style={styles.backButton}
+              >
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
+              <Image
+                source={require("../assets/logo..png")}
+                style={styles.homeLogo}
+                resizeMode="contain"
+              />
+              <View>
+                <Text style={styles.logoText}>KARIGAR AI</Text>
+                <Text style={styles.subtext}>Aap ko kya chahiye?</Text>
+              </View>
             </View>
             <View style={styles.avatar} />
           </View>
@@ -366,6 +381,7 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: C.bg,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 10 : 0,
   },
   keyboard: {
     flex: 1,
@@ -384,6 +400,27 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "bold",
     color: C.white,
+  },
+  homeLogo: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.card,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  backButtonText: {
+    color: C.primary,
+    fontSize: 20,
+    fontWeight: "bold",
+    lineHeight: 22,
   },
   subtext: {
     fontSize: 14,
