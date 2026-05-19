@@ -5,16 +5,13 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "backgroundColor": "#0D1B2A"
-    },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.karigarai.app"
+      "supportsTablet": true
     },
     "android": {
-      "package": "com.karigarai.app"
-    },
-    "web": {}
+      "adaptiveIcon": {
+        "backgroundColor": "#060E17"
+      }
+    }
   }
 }

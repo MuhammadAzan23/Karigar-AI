@@ -1,62 +1,71 @@
-// ═══════════════════════════════════════════════════════
-// Karigar AI — App Entry Point
-// ═══════════════════════════════════════════════════════
-// Sets up React Navigation with stack navigator.
-// Routes: HomeScreen → ResultScreen → BookingScreen → TrackingScreen → DisputeScreen → ProviderScreen
-// ═══════════════════════════════════════════════════════
+import 'react-native-gesture-handler';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
+import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View } from 'react-native';
+import { C } from './src/constants/colors';
 
-import "react-native-gesture-handler";
-import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import LandingScreen  from './src/screens/LandingScreen';
+import ChatScreen     from './src/screens/ChatScreen';
+import MapScreen      from './src/screens/MapScreen';
+import BookingScreen  from './src/screens/BookingScreen';
+import ProfileScreen  from './src/screens/ProfileScreen';
+import ResultScreen   from './src/screens/ResultScreen';
+import ProviderScreen from './src/screens/ProviderScreen';
+import TrackingScreen from './src/screens/TrackingScreen';
+import DisputeScreen  from './src/screens/DisputeScreen';
+import TabBar         from './src/components/TabBar';
 
-import LandingScreen from "./screens/LandingScreen";
-import HomeScreen from "./screens/HomeScreen";
-import ResultScreen from "./screens/ResultScreen";
-import BookingScreen from "./screens/BookingScreen";
-import TrackingScreen from "./screens/TrackingScreen";
-import DisputeScreen from "./screens/DisputeScreen";
-import ProviderScreen from "./screens/ProviderScreen";
-
+const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-export default function App() {
-  console.log("[ANTIGRAVITY][APP] Karigar AI v1.0 initializing...");
-  console.log(
-    "[ANTIGRAVITY][APP] Agent pipeline ready: Intent → Discovery → Matching → Pricing → Booking → Followup"
-  );
-
+function TabNavigator() {
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <StatusBar style="light" />
-        <Stack.Navigator
-          initialRouteName="LandingScreen"
-          screenOptions={{
-            headerShown: false,
-            cardStyle: { backgroundColor: "#0D1B2A" },
-            cardStyleInterpolator: ({ current }) => ({
-              cardStyle: {
-                opacity: current.progress,
+    <Tab.Navigator
+      tabBar={props => <TabBar {...props} />}
+      screenOptions={{ headerShown: false }}
+    >
+      <Tab.Screen name="Landing"  component={LandingScreen} />
+      <Tab.Screen name="Chat"     component={ChatScreen}    />
+      <Tab.Screen name="Map"      component={MapScreen}     />
+      <Tab.Screen name="Booking"  component={BookingScreen} />
+      <Tab.Screen name="Profile"  component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+}
+
+export default function App() {
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <View style={{ flex: 1, backgroundColor: C.bgDeep }}>
+          <StatusBar style="light" translucent />
+          <NavigationContainer
+            theme={{
+              dark: true,
+              colors: {
+                background: C.bgDeep,
+                card: C.bgDeep,
+                text: C.textPrimary,
+                border: 'transparent',
+                primary: C.primary,
               },
-            }),
-          }}
-        >
-          <Stack.Screen
-            name="LandingScreen"
-            component={LandingScreen}
-            options={{ headerShown: false, animation: 'fade' }}
-          />
-          <Stack.Screen name="HomeScreen" component={HomeScreen} />
-          <Stack.Screen name="ResultScreen" component={ResultScreen} />
-          <Stack.Screen name="BookingScreen" component={BookingScreen} />
-          <Stack.Screen name="TrackingScreen" component={TrackingScreen} />
-          <Stack.Screen name="DisputeScreen" component={DisputeScreen} />
-          <Stack.Screen name="ProviderScreen" component={ProviderScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </SafeAreaProvider>
+            }}
+          >
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="MainTabs" component={TabNavigator} />
+              <Stack.Screen name="ResultScreen" component={ResultScreen} />
+              <Stack.Screen name="ProviderScreen" component={ProviderScreen} />
+              <Stack.Screen name="TrackingScreen" component={TrackingScreen} />
+              <Stack.Screen name="DisputeScreen" component={DisputeScreen} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </View>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

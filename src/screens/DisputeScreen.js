@@ -12,20 +12,11 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-
-// DESIGN SYSTEM COLORS
-const C = {
-  bg:      '#0D1B2A',
-  card:    '#1A2F45',
-  primary: '#02C39A',
-  teal:    '#028090',
-  warning: '#F9C74F',
-  danger:  '#E63946', // Red
-  white:   '#FFFFFF',
-  body:    '#8FB3C5',
-  border:  '#1E3A5F',
-  dark:    '#0A1520',
-};
+import { BlurView } from "expo-blur";
+import { Ionicons } from "@expo/vector-icons";
+import { C } from "../constants/colors";
+import { T } from "../constants/typography";
+import { triggerLocalNotification } from "../utils/notifications";
 
 export default function DisputeScreen({ route, navigation }) {
   const { bookingId = "#KAI-7821" } = route.params || {};
@@ -50,6 +41,12 @@ export default function DisputeScreen({ route, navigation }) {
     
     setSubmitted(true);
     
+    // Trigger Real-Time Push Notification Alert!
+    triggerLocalNotification(
+      "⚖️ Dispute Escalated!",
+      `Aapka dispute ticket ${ticketId} darj ho chuka hai. Support review jari hai.`
+    );
+    
     Alert.alert(
       "✅ Shikayat Darj Ho Gayi!",
       `Ticket ID: ${ticketId}\n\nHum 24 ghante ke andar aapse rabta karenge aur aapke maslay ka hal nikalenge.`,
@@ -73,16 +70,16 @@ export default function DisputeScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="light-content" backgroundColor={C.bgDeep} />
       
       {/* HEADER */}
-      <View style={styles.header}>
+      <BlurView intensity={50} tint="dark" style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>←</Text>
+          <Ionicons name="chevron-back" size={24} color={C.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Shikayat Darj Karein</Text>
-        <View style={styles.placeholder} />
-      </View>
+        <View style={{ width: 40 }} />
+      </BlurView>
 
       <KeyboardAvoidingView
         style={styles.keyboard}
@@ -94,7 +91,7 @@ export default function DisputeScreen({ route, navigation }) {
 
           {/* DISPUTE TYPES (2x2 grid) */}
           <View style={styles.section}>
-            <Text style={styles.fieldLabel}>SHIKAYAT KI KISM</Text>
+            <Text style={[T.label, styles.fieldLabel]}>SHIKAYAT KI KISM</Text>
             <View style={styles.grid}>
               {types.map((type) => {
                 const isSelected = disputeType === type.id;
@@ -107,6 +104,7 @@ export default function DisputeScreen({ route, navigation }) {
                     ]}
                     onPress={() => setDisputeType(type.id)}
                   >
+                    <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
                     <Text style={styles.cardIcon}>{type.icon}</Text>
                     <Text style={styles.cardLabel}>{type.label}</Text>
                   </TouchableOpacity>
@@ -117,13 +115,13 @@ export default function DisputeScreen({ route, navigation }) {
 
           {/* DESCRIPTION TEXT INPUT */}
           <View style={styles.section}>
-            <Text style={styles.fieldLabel}>TAFSEEL LIKHEIN</Text>
+            <Text style={[T.label, styles.fieldLabel]}>TAFSEEL LIKHEIN</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               multiline
               numberOfLines={4}
               placeholder="Kya masla hua? Tafseel se likhein..."
-              placeholderTextColor="#3D6680"
+              placeholderTextColor={C.textMuted}
               value={description}
               onChangeText={setDescription}
             />
@@ -131,11 +129,12 @@ export default function DisputeScreen({ route, navigation }) {
 
           {/* EVIDENCE SECTION */}
           <View style={styles.section}>
-            <Text style={styles.fieldLabel}>SABOOT (Optional)</Text>
+            <Text style={[T.label, styles.fieldLabel]}>SABOOT (Optional)</Text>
             <TouchableOpacity
               style={styles.evidenceBox}
               onPress={() => Alert.alert("Camera", "Camera access verification completed! Mock image capture done.")}
             >
+              <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
               <Text style={styles.evidenceIcon}>📷</Text>
               <Text style={styles.evidenceText}>Photo Add Karein</Text>
             </TouchableOpacity>
@@ -143,7 +142,7 @@ export default function DisputeScreen({ route, navigation }) {
 
           {/* RESOLUTION OPTIONS */}
           <View style={styles.section}>
-            <Text style={styles.fieldLabel}>AAP KYA CHAHTE HAIN?</Text>
+            <Text style={[T.label, styles.fieldLabel]}>AAP KYA CHAHTE HAIN?</Text>
             <View style={styles.chipsRow}>
               {resolutionOptions.map((option) => {
                 const isSelected = resolution === option;
@@ -188,31 +187,25 @@ export default function DisputeScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: C.bg,
+    backgroundColor: C.bgDeep,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: C.bg,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderColor: C.glassBorder,
+    backgroundColor: "rgba(11,22,34,0.7)",
   },
   backBtn: {
-    padding: 8,
-  },
-  backBtnText: {
-    color: C.white,
-    fontSize: 24,
-    fontWeight: "bold",
+    padding: 4,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: C.white,
-  },
-  placeholder: {
-    width: 40,
+    fontWeight: "700",
+    color: C.textPrimary,
   },
   keyboard: {
     flex: 1,
@@ -222,7 +215,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   subheadText: {
-    color: C.body,
+    color: C.textSecond,
     fontSize: 13,
     textAlign: "center",
     marginBottom: 20,
@@ -232,11 +225,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   fieldLabel: {
-    fontSize: 11,
-    fontWeight: "bold",
-    letterSpacing: 1.5,
+    fontSize: 10,
+    fontWeight: "700",
     color: C.teal,
-    textTransform: "uppercase",
+    letterSpacing: 1.5,
     marginBottom: 10,
     paddingLeft: 4,
   },
@@ -248,38 +240,40 @@ const styles = StyleSheet.create({
   },
   gridCard: {
     width: "48%",
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 20,
     paddingHorizontal: 10,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
+    overflow: "hidden",
+    backgroundColor: C.glass,
   },
   cardSelected: {
     borderColor: C.danger,
-    backgroundColor: "#2A1520",
+    backgroundColor: "rgba(230,57,70,0.15)",
   },
   cardUnselected: {
-    borderColor: C.border,
-    backgroundColor: C.card,
+    borderColor: C.glassBorder,
+    backgroundColor: C.glass,
   },
   cardIcon: {
     fontSize: 32,
     marginBottom: 8,
   },
   cardLabel: {
-    color: C.white,
-    fontWeight: "bold",
+    color: C.textPrimary,
+    fontWeight: "700",
     fontSize: 13,
     textAlign: "center",
   },
   input: {
-    backgroundColor: C.card,
+    backgroundColor: C.glass,
     borderWidth: 1,
-    borderColor: C.teal,
+    borderColor: C.border,
     borderRadius: 12,
     padding: 14,
-    color: C.white,
+    color: C.textPrimary,
     fontSize: 14,
   },
   textArea: {
@@ -290,18 +284,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderStyle: "dashed",
     borderColor: C.border,
-    backgroundColor: C.card,
+    backgroundColor: C.glass,
     borderRadius: 12,
     padding: 24,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
   evidenceIcon: {
     fontSize: 32,
     marginBottom: 8,
   },
   evidenceText: {
-    color: C.body,
+    color: C.textSecond,
     fontSize: 13,
     fontWeight: "600",
   },
@@ -326,7 +321,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 13,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
   chipTextSelected: {
     color: C.white,
@@ -345,11 +340,11 @@ const styles = StyleSheet.create({
   },
   submitBtnText: {
     color: C.white,
-    fontWeight: "bold",
+    fontWeight: "800",
     fontSize: 16,
   },
   escalationText: {
-    color: C.body,
+    color: C.textSecond,
     fontSize: 12,
     textAlign: "center",
     paddingHorizontal: 20,

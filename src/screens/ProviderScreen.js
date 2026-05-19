@@ -10,22 +10,12 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
+import { BlurView } from "expo-blur";
+import { Ionicons } from "@expo/vector-icons";
+import { C } from "../constants/colors";
+import { T } from "../constants/typography";
 
 const { width } = Dimensions.get("window");
-
-// DESIGN SYSTEM COLORS
-const C = {
-  bg:      '#0D1B2A',
-  card:    '#1A2F45',
-  primary: '#02C39A',
-  teal:    '#028090',
-  warning: '#F9C74F',
-  danger:  '#E63946',
-  white:   '#FFFFFF',
-  body:    '#8FB3C5',
-  border:  '#1E3A5F',
-  dark:    '#0A1520',
-};
 
 export default function ProviderScreen({ route, navigation }) {
   // Default values to prevent any possibility of a crash
@@ -33,16 +23,18 @@ export default function ProviderScreen({ route, navigation }) {
 
   const name = provider.name || "Ali Raza Electric";
   const initials = provider.initials || name.substring(0, 2).toUpperCase();
-  const serviceType = provider.service_type || "electrician";
+  
+  // Property keys aligned with mockData
+  const serviceType = provider.service || "electrician";
   const rating = provider.rating || 4.9;
-  const reviewCount = provider.review_count || 120;
-  const experienceYears = provider.experience_years || 4;
-  const onTimeScore = provider.on_time_score || 94;
-  const cancellationRate = provider.cancellation_rate || 2;
-  const pricePerHour = provider.price_per_hour || 800;
-  const specialization = provider.specialization || "general repair";
-  const availability = provider.availability || ["morning", "afternoon"];
-  const avatarBg = provider.avatar_bg || C.teal;
+  const reviewCount = provider.jobs || 120;
+  const experienceYears = provider.experience || "4 saal";
+  const onTimeScore = provider.onTime || 94;
+  const cancellationRate = provider.cancelRate || 2;
+  const pricePerHour = provider.price || 800;
+  const specialization = provider.skills ? provider.skills.join(", ") : "general repair";
+  const availability = provider.available ? ["morning", "afternoon", "evening"] : ["morning"];
+  const avatarBg = provider.avatarColor || C.teal;
 
   useEffect(() => {
     console.log(`[ANTIGRAVITY][PROVIDER] ProviderScreen opened for: ${name}`);
@@ -69,7 +61,7 @@ export default function ProviderScreen({ route, navigation }) {
     };
 
     console.log(`[ANTIGRAVITY][BOOKING] Quote calculated: PKR ${quote.total}`);
-    navigation.navigate("BookingScreen", { provider, intent: {}, quote });
+    navigation.navigate("Booking", { karigar: provider, intent: {}, quote });
   };
 
   const getSlotDetails = (slot) => {
@@ -81,72 +73,72 @@ export default function ProviderScreen({ route, navigation }) {
     return slot;
   };
 
-  const mockReviews = [
+  // Safe extract mock reviews
+  const mockReviews = provider.reviews || [
     {
       name: "Ahmed R.",
       stars: 5,
-      comment: "Bohot acha kaam kiya, time par aaye aur kaam perfect tha!",
-      date: "2 din pehle",
+      text: "Bohot acha kaam kiya, time par aaye aur kaam perfect tha!",
     },
     {
       name: "Sara M.",
       stars: 4,
-      comment: "Kaam theek tha, thora late aaye lekin kaam mein koi kami nahi thi.",
-      date: "1 hafta pehle",
-    },
-    {
-      name: "Usman K.",
-      stars: 5,
-      comment: "Highly recommended! Price bhi reasonable tha.",
-      date: "2 hafta pehle",
+      text: "Kaam theek tha, thora late aaye lekin kaam mein koi kami nahi thi.",
     },
   ];
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="light-content" backgroundColor={C.bgDeep} />
       
       {/* HEADER */}
-      <View style={styles.header}>
+      <BlurView intensity={50} tint="dark" style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>←</Text>
+          <Ionicons name="chevron-back" size={24} color={C.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{name}</Text>
-        <View style={styles.placeholder} />
-      </View>
+        <View style={{ width: 40 }} />
+      </BlurView>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         
         {/* HERO AREA */}
         <View style={styles.heroArea}>
-          <View style={[styles.avatarCircle, { backgroundColor: avatarBg }]}>
-            <Text style={styles.avatarText}>{initials}</Text>
+          <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={[styles.avatarCircle, { borderColor: C.primary }]}>
+            <View style={[styles.avatarInner, { backgroundColor: avatarBg }]}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
           </View>
           <Text style={styles.profileName}>{name}</Text>
           <Text style={styles.profileService}>{serviceType.toUpperCase()}</Text>
           <Text style={styles.profileMeta}>
-            ⭐ {rating.toFixed(1)}  |  {reviewCount} Jobs  |  {experienceYears} Yrs Exp
+            ⭐ {rating.toFixed(1)}  |  {reviewCount} Jobs  |  {experienceYears} Exp
           </Text>
         </View>
 
-        {/* 4 STATS ROW (offset positioning) */}
+        {/* 4 STATS ROW */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
+            <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
             <Text style={styles.statVal}>{rating.toFixed(1)}</Text>
             <Text style={styles.statLbl}>Rating</Text>
           </View>
 
           <View style={styles.statCard}>
+            <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
             <Text style={styles.statVal}>{onTimeScore}%</Text>
             <Text style={styles.statLbl}>On Time</Text>
           </View>
 
           <View style={styles.statCard}>
+            <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
             <Text style={styles.statVal}>{cancellationRate}%</Text>
             <Text style={styles.statLbl}>Cancel</Text>
           </View>
 
           <View style={styles.statCard}>
+            <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
             <Text style={styles.statVal}>PKR {pricePerHour}</Text>
             <Text style={styles.statLbl}>Per Hour</Text>
           </View>
@@ -154,10 +146,11 @@ export default function ProviderScreen({ route, navigation }) {
 
         {/* ABOUT SECTION */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionLabel}>BAARE MEIN</Text>
-          <Text style={styles.experienceText}>Tajurba: {experienceYears} saal ka tajarba</Text>
+          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+          <Text style={[T.label, styles.sectionLabel]}>BAARE MEIN</Text>
+          <Text style={styles.experienceText}>Tajurba: {experienceYears}</Text>
           <Text style={styles.aboutBodyText}>
-            Main certified professional hoon. Tamam kam tasalli bakhsh, munasib rates aur safety parameters ke mutabiq kiya jata hai.
+            {provider.bio || "Certified professional karigar. Tamam kam tasalli bakhsh, munasib rates aur safety parameters ke mutabiq kiya jata hai."}
           </Text>
 
           <View style={styles.specContainer}>
@@ -167,17 +160,16 @@ export default function ProviderScreen({ route, navigation }) {
               </View>
             ))}
 
-            {provider.verified && (
-              <View style={styles.verifiedBadge}>
-                <Text style={styles.verifiedText}>✅ Verified Karigar</Text>
-              </View>
-            )}
+            <View style={styles.verifiedBadge}>
+              <Text style={styles.verifiedText}>✅ Verified</Text>
+            </View>
           </View>
         </View>
 
         {/* AVAILABILITY */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionLabel}>FARIG WAQT</Text>
+          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+          <Text style={[T.label, styles.sectionLabel]}>FARIG WAQT</Text>
           <View style={styles.slotsRow}>
             {availability.map((slot, idx) => (
               <View key={idx} style={styles.slotChip}>
@@ -187,22 +179,22 @@ export default function ProviderScreen({ route, navigation }) {
           </View>
         </View>
 
-        {/* MOCK REVIEWS */}
+        {/* REVIEWS */}
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionLabel}>CUSTOMERS KI RAY</Text>
+          <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+          <Text style={[T.label, styles.sectionLabel]}>CUSTOMERS KI RAY</Text>
           {mockReviews.map((review, idx) => (
             <View key={idx} style={styles.reviewCard}>
               <View style={styles.reviewHeader}>
                 <Text style={styles.reviewName}>{review.name}</Text>
-                <Text style={styles.reviewStars}>{"★".repeat(review.stars)}</Text>
-                <Text style={styles.reviewDate}>{review.date}</Text>
+                <Text style={styles.reviewStars}>{"★".repeat(review.stars || 5)}</Text>
+                <Text style={styles.reviewDate}>{review.date || "Hal he mein"}</Text>
               </View>
-              <Text style={styles.reviewComment}>{review.comment}</Text>
+              <Text style={styles.reviewComment}>{review.text || review.comment}</Text>
             </View>
           ))}
         </View>
 
-        {/* Empty padding block so scrollview content doesn't get covered by sticky bottom button */}
         <View style={styles.bottomBuffer} />
       </ScrollView>
 
@@ -217,74 +209,77 @@ export default function ProviderScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: C.bg,
+    backgroundColor: C.bgDeep,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: C.bg,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderColor: C.glassBorder,
+    backgroundColor: "rgba(11,22,34,0.7)",
   },
   backBtn: {
-    padding: 8,
-  },
-  backBtnText: {
-    color: C.white,
-    fontSize: 24,
-    fontWeight: "bold",
+    padding: 4,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: C.white,
+    fontWeight: "700",
+    color: C.textPrimary,
     flex: 1,
     textAlign: "center",
-  },
-  placeholder: {
-    width: 40,
   },
   scroll: {
     paddingBottom: 24,
   },
   heroArea: {
-    backgroundColor: C.card,
     alignItems: "center",
     justifyContent: "center",
     height: 220,
     paddingTop: 10,
     paddingBottom: 30,
+    backgroundColor: C.glass,
+    borderBottomWidth: 1,
+    borderBottomColor: C.glassBorder,
+    overflow: "hidden",
   },
   avatarCircle: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    marginBottom: 12,
+  },
+  avatarInner: {
     width: 80,
     height: 80,
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 3,
-    borderColor: C.primary,
-    marginBottom: 12,
   },
   avatarText: {
     color: C.white,
     fontSize: 28,
-    fontWeight: "bold",
+    fontWeight: "800",
   },
   profileName: {
     fontSize: 22,
-    fontWeight: "bold",
-    color: C.white,
+    fontWeight: "800",
+    color: C.textPrimary,
   },
   profileService: {
-    fontSize: 14,
+    fontSize: 12,
     color: C.primary,
-    fontWeight: "600",
+    fontWeight: "700",
     marginTop: 4,
     letterSpacing: 1.5,
   },
   profileMeta: {
-    color: C.body,
+    color: C.textSecond,
     fontSize: 13,
     marginTop: 6,
   },
@@ -294,58 +289,61 @@ const styles = StyleSheet.create({
     marginTop: -20,
     justifyContent: "space-between",
     gap: 8,
+    zIndex: 10,
   },
   statCard: {
     flex: 1,
-    backgroundColor: C.card,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 14,
+    paddingVertical: 12,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: C.glassBorder,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 4,
+    backgroundColor: C.glass,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
   },
   statVal: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: C.white,
+    fontSize: 14,
+    fontWeight: "800",
+    color: C.textPrimary,
     textAlign: "center",
   },
   statLbl: {
     fontSize: 10,
-    color: C.body,
+    color: C.textSecond,
     marginTop: 4,
     textAlign: "center",
   },
   sectionCard: {
-    backgroundColor: C.card,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginHorizontal: 12,
+    marginHorizontal: 16,
     marginTop: 16,
+    borderWidth: 1,
+    borderColor: C.glassBorder,
+    backgroundColor: C.glass,
+    overflow: "hidden",
   },
   sectionLabel: {
-    fontSize: 11,
-    fontWeight: "bold",
-    letterSpacing: 1.5,
+    fontSize: 10,
+    fontWeight: "700",
     color: C.teal,
-    textTransform: "uppercase",
+    letterSpacing: 1.5,
     marginBottom: 12,
   },
   experienceText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: C.white,
+    fontWeight: "700",
+    color: C.textPrimary,
     marginBottom: 6,
   },
   aboutBodyText: {
     fontSize: 14,
-    color: C.body,
+    color: C.textSecond,
     lineHeight: 22,
   },
   specContainer: {
@@ -355,7 +353,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   specChip: {
-    backgroundColor: C.bg,
+    backgroundColor: "rgba(0,0,0,0.2)",
     borderWidth: 1,
     borderColor: C.teal,
     borderRadius: 20,
@@ -368,13 +366,15 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   verifiedBadge: {
-    backgroundColor: C.primary,
+    backgroundColor: C.primaryDim,
+    borderWidth: 1,
+    borderColor: C.primary,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
   verifiedText: {
-    color: C.bg,
+    color: C.primary,
     fontSize: 12,
     fontWeight: "bold",
   },
@@ -390,17 +390,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   slotChipText: {
-    color: C.bg,
-    fontWeight: "bold",
+    color: C.bgDeep,
+    fontWeight: "800",
     fontSize: 12,
   },
   reviewCard: {
-    backgroundColor: C.bg,
-    borderRadius: 8,
+    backgroundColor: "rgba(0,0,0,0.15)",
+    borderRadius: 12,
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: C.glassBorder,
   },
   reviewHeader: {
     flexDirection: "row",
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   reviewName: {
-    color: C.white,
+    color: C.textPrimary,
     fontSize: 13,
     fontWeight: "bold",
     marginRight: 8,
@@ -419,11 +419,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   reviewDate: {
-    color: C.body,
+    color: C.textSecond,
     fontSize: 11,
   },
   reviewComment: {
-    color: C.body,
+    color: C.textSecond,
     fontSize: 13,
     lineHeight: 18,
   },
@@ -442,8 +442,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   stickyButtonText: {
-    color: C.bg,
+    color: C.bgDeep,
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "800",
   },
 });

@@ -12,30 +12,21 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { C } from "../constants/colors";
+import { T } from "../constants/typography";
 
 const { width } = Dimensions.get("window");
 
-// DESIGN SYSTEM COLORS
-const C = {
-  bg:      '#0D1B2A',
-  card:    '#1A2F45',
-  primary: '#02C39A',
-  teal:    '#028090',
-  warning: '#F9C74F',
-  danger:  '#E63946',
-  white:   '#FFFFFF',
-  body:    '#8FB3C5',
-  border:  '#1E3A5F',
-  dark:    '#0A1520',
-};
-
-// Local helpers to guarantee zero crashes and self-containment
 const getServiceIcon = (type) => {
   const t = (type || "").toLowerCase();
   if (t.includes("elect")) return "⚡";
   if (t.includes("plumb")) return "🔧";
   if (t.includes("ac") || t.includes("cool")) return "❄️";
   if (t.includes("tut") || t.includes("study") || t.includes("parh")) return "📚";
+  if (t.includes("carp") || t.includes("wood") || t.includes("furn")) return "🪚";
   if (t.includes("beaut") || t.includes("nail") || t.includes("salon")) return "💅";
   return "🛠️";
 };
@@ -43,7 +34,7 @@ const getServiceIcon = (type) => {
 export default function ResultScreen({ route, navigation }) {
   const { intent = {}, rankedProviders = [], providers = [] } = route.params || {};
   
-  // Support both key names from previous and new versions of HomeScreen safely
+  // Support both key names safely
   const activeProviders = rankedProviders.length > 0 ? rankedProviders : providers;
 
   const [traceVisible, setTraceVisible] = useState(false);
@@ -54,16 +45,15 @@ export default function ResultScreen({ route, navigation }) {
     if (activeProviders && activeProviders.length > 0) {
       const topMatch = activeProviders[0];
       console.log(`[ANTIGRAVITY][RESULT] Top match: ${topMatch.name}`);
-      console.log(`[ANTIGRAVITY][RESULT] Score: ${topMatch.matchScore || topMatch.score || 98}`);
     } else {
       console.log("[ANTIGRAVITY][RESULT] No providers matched — showing waitlist fallback");
     }
   }, []);
 
   const handleBook = (provider) => {
-    // Calculate quote dynamic prices as per agents/pricingAgent rules
-    const distanceVal = provider.distanceKm || provider.distance || 1.0;
-    const pricePerHourVal = provider.price_per_hour || provider.price || 800;
+    // Calculate quote dynamic prices
+    const distanceVal = provider.distance || 1.0;
+    const pricePerHourVal = provider.price || 800;
     
     const quote = {
       visitFee: 300,
@@ -81,7 +71,7 @@ export default function ResultScreen({ route, navigation }) {
         : intent.urgency === "medium" ? 100 : 0,
       surgeCharge: 0,
       discount:
-        intent.budget_sensitivity === "high"
+        intent.budget_sensitivity === "high" || intent.budget_sensitivity?.toLowerCase().includes("budget")
           ? Math.round(pricePerHourVal * 0.1)
           : 0,
     };
@@ -96,7 +86,7 @@ export default function ResultScreen({ route, navigation }) {
       quote.discount;
 
     quote.budgetNote =
-      intent.budget_sensitivity === "high"
+      intent.budget_sensitivity === "high" || intent.budget_sensitivity?.toLowerCase().includes("budget")
         ? "Budget-friendly rate applied (10% Discount)"
         : null;
 
@@ -109,26 +99,28 @@ export default function ResultScreen({ route, navigation }) {
     ];
 
     console.log(`[ANTIGRAVITY][BOOKING] Quote calculated: PKR ${quote.total}`);
-    navigation.navigate("BookingScreen", { provider, intent, quote });
+    navigation.navigate("Booking", { karigar: provider, intent, quote });
   };
 
-  // Stress Test 1: No Provider Available Fallback
+  // Fallback if no matching providers
   if (activeProviders.length === 0) {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={C.bg} />
-        <View style={styles.header}>
+        <StatusBar barStyle="light-content" backgroundColor={C.bgDeep} />
+        
+        {/* HEADER */}
+        <BlurView intensity={50} tint="dark" style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>←</Text>
+            <Ionicons name="chevron-back" size={24} color={C.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Karigar Dhundhein</Text>
-          <View style={styles.placeholder} />
-        </View>
+          <View style={{ width: 40 }} />
+        </BlurView>
 
         <View style={styles.fallbackContainer}>
           <Text style={styles.fallbackEmoji}>😔</Text>
-          <Text style={styles.fallbackTitle}>Filhaal koi karigar available nahi hai</Text>
-          <Text style={styles.fallbackSubtitle}>
+          <Text style={[T.h2, styles.fallbackTitle]}>Filhaal koi karigar available nahi hai</Text>
+          <Text style={[T.body, styles.fallbackSubtitle]}>
             Aap ke ilaqay mein is waqt koi matching active karigar farigh nahi hai. Kya aap waitlist mein shamil hona chahte hain?
           </Text>
 
@@ -157,15 +149,14 @@ export default function ResultScreen({ route, navigation }) {
   }
 
   const topProvider = activeProviders[0];
-  const otherProviders = activeProviders.slice(1, 6);
+  const otherProviders = activeProviders.slice(1, 5);
 
-  // Formatting reasoning safely
-  const scoreVal = topProvider.matchScore || topProvider.score || 95;
+  const scoreVal = topProvider.score || 95;
   const ratingVal = topProvider.rating || 4.8;
-  const distanceVal = topProvider.distanceKm || topProvider.distance || 0.8;
-  const reliabilityVal = topProvider.on_time_score || topProvider.reliability || 92;
-  const priceVal = topProvider.price_per_hour || topProvider.price || 750;
-  const specText = topProvider.specialization || topProvider.service_type || "General";
+  const distanceVal = topProvider.distance || 0.8;
+  const reliabilityVal = topProvider.onTime || 92;
+  const priceVal = topProvider.price || 750;
+  const specText = topProvider.service || "General";
   
   const reasoningMsg = topProvider.reasoning || 
     `${topProvider.name} selected: ${distanceVal.toFixed(1)}km away, ${reliabilityVal}% reliability, ${specText} specialist, reasonable pricing model matched.`;
@@ -174,51 +165,52 @@ export default function ResultScreen({ route, navigation }) {
   const traceLogs = [
     {
       tag: "DISCOVER",
-      color: "#02C39A",
-      msg: `Found ${activeProviders.length} providers for "${intent.service_type || "AC Technician"}" near ${intent.location || "G-13, Islamabad"}`
+      color: C.primary,
+      msg: `Found ${activeProviders.length} providers for "${intent.service_type || specText}" near ${intent.location || "G-13, Islamabad"}`
     },
     {
       tag: "MATCH",
-      color: "#F9C74F",
+      color: C.warning,
       msg: `Scoring ${activeProviders.length} providers on 6 weighted factors...`
     },
     ...activeProviders.slice(0, 5).map(p => ({
       tag: "SCORE",
-      color: "#8FB3C5",
-      msg: `${p.name}: ${p.matchScore || p.score || 85}/100`
+      color: C.textSecond,
+      msg: `${p.name}: ${p.score || 85}/100`
     })),
     {
       tag: "DECIDE",
-      color: "#02C39A",
+      color: C.primary,
       msg: `Selected: ${topProvider.name}`
     },
     {
       tag: "REASON",
-      color: "#FFFFFF",
+      color: C.white,
       msg: reasoningMsg
     }
   ];
 
   const renderOtherProvider = ({ item }) => {
     const itemRating = item.rating || 4.7;
-    const itemDistance = item.distanceKm || item.distance || 1.5;
-    const itemPrice = item.price_per_hour || item.price || 800;
-    const itemReliability = item.on_time_score || item.reliability || 90;
-    const itemScore = item.matchScore || item.score || 80;
+    const itemDistance = item.distance || 1.5;
+    const itemPrice = item.price || 800;
+    const itemReliability = item.onTime || 90;
+    const itemScore = item.score || 80;
 
     return (
       <TouchableOpacity
         style={styles.providerCard}
         onPress={() => navigation.navigate("ProviderScreen", { provider: item })}
       >
+        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
         <View style={styles.providerRow}>
-          <View style={[styles.avatarCircle, { backgroundColor: item.avatar_bg || C.teal }]}>
-            <Text style={styles.avatarLetter}>{item.initials || item.name.substring(0, 2).toUpperCase()}</Text>
+          <View style={[styles.avatarCircle, { backgroundColor: item.avatarColor || C.teal }]}>
+            <Text style={styles.avatarLetter}>{item.initials}</Text>
           </View>
           <View style={styles.providerDetails}>
             <Text style={styles.providerName}>{item.name}</Text>
             <Text style={styles.providerSubtitle}>
-              {item.service_type} · {item.area || "Islamabad"}
+              {item.service} · {item.location || "Islamabad"}
             </Text>
           </View>
           <View style={styles.scoreBadge}>
@@ -241,34 +233,36 @@ export default function ResultScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+      <StatusBar barStyle="light-content" backgroundColor={C.bgDeep} />
       
       {/* HEADER */}
-      <View style={styles.header}>
+      <BlurView intensity={50} tint="dark" style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>←</Text>
+          <Ionicons name="chevron-back" size={24} color={C.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Best Karigar Mila! 🎉</Text>
-        <View style={styles.placeholder} />
-      </View>
+        <View style={{ width: 40 }} />
+      </BlurView>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         
         {/* REQUEST SUMMARY STRIP */}
-        <View style={styles.summaryStrip}>
+        <BlurView intensity={25} tint="dark" style={styles.summaryStrip}>
           <Text style={styles.summaryText}>
-            {getServiceIcon(intent.service_type)} {intent.service_type || "AC Technician"}  ·  📍 {intent.location || "G-13"}  ·  🕐 {intent.preferred_time || "Flexible"}
+            {getServiceIcon(intent.service_type)} {intent.service_type || specText}  ·  📍 {intent.location || "G-13"}  ·  🕐 {intent.preferred_time || "Flexible"}
           </Text>
-        </View>
+        </BlurView>
 
         {/* TOP PROVIDER CARD (BEST MATCH) */}
         <View style={styles.topCard}>
+          <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
+          
           <View style={styles.bestMatchBadge}>
             <Text style={styles.bestMatchText}>🏆 BEST MATCH</Text>
           </View>
 
           <Text style={styles.topName}>{topProvider.name}</Text>
-          <Text style={styles.topService}>{topProvider.service_type}</Text>
+          <Text style={styles.topService}>{topProvider.service}</Text>
 
           {/* 4 Stat Badges */}
           <View style={styles.statsBadgesContainer}>
@@ -307,7 +301,7 @@ export default function ResultScreen({ route, navigation }) {
           <View style={styles.actionsContainer}>
             <TouchableOpacity
               style={styles.callBtn}
-              onPress={() => Alert.alert("Call", `Calling ${topProvider.phone || "0300-1234567"}...`)}
+              onPress={() => Alert.alert("Call", `Calling ${topProvider.name}...`)}
             >
               <Text style={styles.callBtnText}>📞 Call</Text>
             </TouchableOpacity>
@@ -323,7 +317,7 @@ export default function ResultScreen({ route, navigation }) {
         <FlatList
           data={otherProviders}
           renderItem={renderOtherProvider}
-          keyExtractor={(item) => item.id || item.name}
+          keyExtractor={(item) => item.id}
           scrollEnabled={false}
           style={styles.otherList}
         />
@@ -360,56 +354,50 @@ export default function ResultScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: C.bg,
+    backgroundColor: C.bgDeep,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: C.bg,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderColor: C.glassBorder,
+    backgroundColor: "rgba(11,22,34,0.7)",
   },
   backBtn: {
-    padding: 8,
-  },
-  backBtnText: {
-    color: C.white,
-    fontSize: 24,
-    fontWeight: "bold",
+    padding: 4,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: C.white,
-  },
-  placeholder: {
-    width: 40,
+    fontWeight: "700",
+    color: C.textPrimary,
   },
   scroll: {
-    paddingBottom: 24,
+    paddingBottom: 40,
   },
   summaryStrip: {
-    backgroundColor: C.card,
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderBottomWidth: 2,
-    borderBottomColor: C.primary,
+    borderBottomWidth: 1,
+    borderBottomColor: C.primaryGlow,
     alignItems: "center",
+    overflow: "hidden",
   },
   summaryText: {
     fontSize: 13,
-    color: C.body,
+    color: C.textSecond,
     fontWeight: "600",
   },
   topCard: {
-    backgroundColor: C.card,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: C.primary,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
-    margin: 12,
-    elevation: 8,
+    margin: 16,
+    overflow: "hidden",
+    backgroundColor: C.glass,
     shadowColor: C.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -424,19 +412,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   bestMatchText: {
-    color: C.bg,
+    color: C.bgDeep,
     fontSize: 10,
     fontWeight: "bold",
   },
   topName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: C.white,
+    fontSize: 22,
+    fontWeight: "800",
+    color: C.textPrimary,
   },
   topService: {
     fontSize: 14,
-    color: C.body,
+    color: C.primary,
     marginTop: 2,
+    fontWeight: "600",
   },
   statsBadgesContainer: {
     flexDirection: "row",
@@ -445,15 +434,15 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   statBadge: {
-    backgroundColor: C.bg,
+    backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: C.glassBorder,
   },
   statBadgeText: {
-    color: C.white,
+    color: C.textPrimary,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -467,28 +456,31 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   matchScoreLabel: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: C.body,
+    fontSize: 10,
+    fontWeight: "700",
+    color: C.textSecond,
     letterSpacing: 1.5,
   },
   matchScoreVal: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 26,
+    fontWeight: "800",
     color: C.primary,
   },
   progressBarBg: {
     height: 6,
-    backgroundColor: C.bg,
+    backgroundColor: "rgba(0,0,0,0.4)",
     borderRadius: 3,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: C.glassBorder,
   },
   progressBarFill: {
     height: "100%",
     backgroundColor: C.primary,
+    borderRadius: 3,
   },
   reasoningBox: {
-    backgroundColor: C.bg,
+    backgroundColor: "rgba(0,0,0,0.2)",
     borderRadius: 8,
     padding: 12,
     marginTop: 16,
@@ -502,62 +494,64 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   reasoningText: {
-    color: C.white,
+    color: C.textSecond,
     fontSize: 13,
     lineHeight: 20,
   },
   actionsContainer: {
     flexDirection: "row",
     gap: 8,
-    marginTop: 16,
+    marginTop: 18,
   },
   callBtn: {
     flex: 1,
-    backgroundColor: C.border,
+    backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1,
     borderColor: C.teal,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   callBtnText: {
-    color: C.white,
-    fontWeight: "bold",
+    color: C.textPrimary,
+    fontWeight: "700",
     fontSize: 14,
   },
   bookBtn: {
     flex: 2,
     backgroundColor: C.primary,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   bookBtnText: {
-    color: C.bg,
-    fontWeight: "bold",
+    color: C.bgDeep,
+    fontWeight: "800",
     fontSize: 14,
   },
   otherTitle: {
-    color: C.body,
+    color: C.textSecond,
     fontSize: 14,
-    fontWeight: "bold",
-    paddingHorizontal: 20,
+    fontWeight: "700",
+    paddingHorizontal: 16,
     marginTop: 16,
     marginBottom: 8,
+    letterSpacing: 0.5,
   },
   otherList: {
     paddingHorizontal: 8,
   },
   providerCard: {
-    backgroundColor: C.card,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginHorizontal: 12,
-    marginBottom: 8,
+    marginHorizontal: 8,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: C.glassBorder,
+    overflow: "hidden",
+    backgroundColor: C.glass,
   },
   providerRow: {
     flexDirection: "row",
@@ -573,20 +567,20 @@ const styles = StyleSheet.create({
   avatarLetter: {
     color: C.white,
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "800",
   },
   providerDetails: {
     flex: 1,
     marginLeft: 12,
   },
   providerName: {
-    color: C.white,
+    color: C.textPrimary,
     fontSize: 15,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
   providerSubtitle: {
-    color: C.body,
-    fontSize: 13,
+    color: C.textSecond,
+    fontSize: 12,
     marginTop: 2,
   },
   scoreBadge: {
@@ -596,11 +590,11 @@ const styles = StyleSheet.create({
   scoreNumber: {
     color: C.primary,
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: "800",
   },
   scoreLabel: {
-    color: C.body,
-    fontSize: 11,
+    color: C.textMuted,
+    fontSize: 10,
   },
   miniStatsRow: {
     flexDirection: "row",
@@ -608,22 +602,24 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: C.border,
+    borderTopColor: C.divider,
   },
   miniStatText: {
     fontSize: 12,
-    color: C.body,
+    color: C.textSecond,
   },
   miniStatSeparator: {
     fontSize: 12,
-    color: C.border,
+    color: C.textMuted,
     marginHorizontal: 6,
   },
   traceContainer: {
-    backgroundColor: C.dark,
-    borderRadius: 8,
-    margin: 12,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 12,
+    margin: 16,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: C.glassBorder,
   },
   traceHeader: {
     flexDirection: "row",
@@ -633,18 +629,20 @@ const styles = StyleSheet.create({
   },
   traceTitle: {
     color: C.teal,
-    fontWeight: "bold",
-    fontSize: 14,
+    fontWeight: "700",
+    fontSize: 13,
+    letterSpacing: 0.5,
   },
   traceToggle: {
     color: C.teal,
     fontSize: 12,
+    fontWeight: "600",
   },
   traceBody: {
     padding: 12,
     borderTopWidth: 1,
-    borderTopColor: C.border,
-    backgroundColor: "#050B12",
+    borderTopColor: C.glassBorder,
+    backgroundColor: "#03060a",
   },
   traceLogLine: {
     flexDirection: "row",
@@ -668,30 +666,26 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 30,
-    backgroundColor: C.bg,
+    paddingHorizontal: 24,
   },
   fallbackEmoji: {
-    fontSize: 60,
+    fontSize: 52,
     marginBottom: 16,
   },
   fallbackTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: C.warning,
     textAlign: "center",
     marginBottom: 8,
+    color: C.warning,
   },
   fallbackSubtitle: {
-    fontSize: 14,
-    color: C.body,
     textAlign: "center",
     lineHeight: 20,
     marginBottom: 24,
+    color: C.textSecond,
   },
   waitlistBtn: {
     backgroundColor: C.warning,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 24,
     width: "100%",
@@ -699,15 +693,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   waitlistBtnText: {
-    color: C.bg,
-    fontWeight: "bold",
+    color: C.bgDeep,
+    fontWeight: "800",
     fontSize: 15,
   },
   successWaitlist: {
-    backgroundColor: "rgba(2,195,154,0.15)",
+    backgroundColor: "rgba(6,214,160,0.15)",
     borderWidth: 1,
-    borderColor: C.primary,
-    borderRadius: 12,
+    borderColor: C.success,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 24,
     width: "100%",
@@ -715,22 +709,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   successWaitlistText: {
-    color: C.primary,
-    fontWeight: "bold",
+    color: C.success,
+    fontWeight: "800",
     fontSize: 15,
   },
   retryBtn: {
     borderWidth: 1,
-    borderColor: C.teal,
-    borderRadius: 12,
+    borderColor: C.glassBorder,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 24,
     width: "100%",
     alignItems: "center",
   },
   retryBtnText: {
-    color: C.body,
-    fontWeight: "bold",
+    color: C.textPrimary,
+    fontWeight: "700",
     fontSize: 15,
   },
   spacer: {
