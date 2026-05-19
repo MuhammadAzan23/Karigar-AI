@@ -23,8 +23,10 @@ import ProviderScreen from "./screens/ProviderScreen";
 const Stack = createStackNavigator();
 
 export default function App() {
-  console.log("[ANTIGRAVITY][APP] Karigar AI initializing...");
-  console.log("[ANTIGRAVITY][APP] Agent pipeline: Intent → Discovery → Matching");
+  console.log("[ANTIGRAVITY][APP] Karigar AI v1.0 initializing...");
+  console.log(
+    "[ANTIGRAVITY][APP] Agent pipeline ready: Intent → Discovery → Matching → Pricing → Booking → Followup"
+  );
 
   return (
     <SafeAreaProvider>
