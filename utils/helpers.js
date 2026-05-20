@@ -56,7 +56,6 @@ export function formatTime(preferredTime) {
     }
   }
 
-  // Return as-is if no mapping found
   return preferredTime;
 }
 
@@ -68,13 +67,13 @@ export function formatTime(preferredTime) {
 export function getUrgencyColor(urgency) {
   switch ((urgency || "").toLowerCase()) {
     case "high":
-      return "#FF4D4D"; // Red
+      return "#EF4444"; // Red
     case "medium":
-      return "#FFD93D"; // Yellow
+      return "#F59E0B"; // Amber
     case "low":
-      return "#02C39A"; // Green (mint)
+      return "#10B981"; // Green (success)
     default:
-      return "#AAAAAA"; // Grey for unknown
+      return "#475569"; // Muted label grey
   }
 }
 
@@ -162,10 +161,17 @@ export function getAreaCoordinates(area) {
     "malir": { lat: 24.8900, lng: 67.2000 },
     "bahria town": { lat: 24.9600, lng: 67.3200 },
     "bahria": { lat: 24.9600, lng: 67.3200 },
-    "g-13": { lat: 24.9262, lng: 67.0935 },
     "karachi": { lat: 24.8607, lng: 67.0011 },
   };
 
   const key = (area || "karachi").toLowerCase().trim();
-  return areaCoords[key] || areaCoords["karachi"];
+  
+  // Fuzzy search for coordinates
+  for (const [name, coords] of Object.entries(areaCoords)) {
+    if (key.includes(name)) {
+      return coords;
+    }
+  }
+
+  return areaCoords["karachi"];
 }

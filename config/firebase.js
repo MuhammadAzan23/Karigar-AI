@@ -1,8 +1,7 @@
 // ═══════════════════════════════════════════════════════
 // Karigar AI — Firebase Configuration
 // ═══════════════════════════════════════════════════════
-// All sensitive keys are loaded from .env file.
-// Never hardcode credentials here!
+// All sensitive keys are loaded from Expo Environment variables.
 // ═══════════════════════════════════════════════════════
 
 import { initializeApp } from "firebase/app";
@@ -20,16 +19,15 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
+// Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
 // Initialize Realtime Database
 const db = getDatabase(app);
 
-// Initialize Authentication with AsyncStorage Persistence
+// Initialize Auth with AsyncStorage persistence for React Native
 const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });
 
 export { app, db, auth };
-

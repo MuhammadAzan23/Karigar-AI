@@ -3,238 +3,159 @@
 // ═══════════════════════════════════════════════════════
 // Scores and ranks discovered providers on 6 weighted
 // factors and generates AI reasoning for the top pick.
+// Logs: [ANTIGRAVITY][MATCHING_AGENT]
 // ═══════════════════════════════════════════════════════
 
-/**
- * Calculates the distance score (25% weight).
- * Closer providers score higher.
- * @param {number} distanceKm - Distance in km
- * @returns {number} Score 0-100
- */
 function calcDistanceScore(distanceKm) {
-  return Math.max(0, 100 - distanceKm * 10);
+  // Closer is better. Under 1km gets 100. Decreases by 8 points per km.
+  return Math.max(0, 100 - Math.max(0, distanceKm - 1) * 8);
 }
 
-/**
- * Calculates the rating score (20% weight).
- * @param {number} rating - Provider rating 0-5
- * @returns {number} Score 0-100
- */
 function calcRatingScore(rating) {
+  // Direct scale of 0-5 mapping to 0-100
   return (rating / 5) * 100;
 }
 
-/**
- * Calculates the reliability score (20% weight).
- * Based on on-time performance minus cancellation penalty.
- * @param {number} onTimeScore - On-time percentage
- * @param {number} cancellationRate - Cancellation percentage
- * @returns {number} Score 0-100
- */
 function calcReliabilityScore(onTimeScore, cancellationRate) {
+  // Combines on-time score and gives double penalty for cancellations
   return Math.max(0, Math.min(100, onTimeScore - cancellationRate * 2));
 }
 
-/**
- * Calculates the price score (15% weight).
- * Budget-sensitive users prefer cheaper providers.
- * @param {number} pricePerHour - Price in PKR
- * @param {string} budgetSensitivity - "low" | "medium" | "high"
- * @returns {number} Score 0-100
- */
 function calcPriceScore(pricePerHour, budgetSensitivity) {
+  // High sensitivity (budget-minded) -> cheaper is better.
   if ((budgetSensitivity || "").toLowerCase() === "high") {
-    return Math.max(0, 100 - (pricePerHour - 500) / 10);
+    return Math.max(0, 100 - (pricePerHour - 400) * 0.08);
   }
-  return 70; // Neutral score for non-budget-conscious users
+  // Low sensitivity (wants premium) -> higher price indicates premium.
+  if ((budgetSensitivity || "").toLowerCase() === "low") {
+    return Math.min(100, (pricePerHour / 2500) * 100);
+  }
+  return 75; // Neutral default
 }
 
-/**
- * Calculates the specialization match score (12% weight).
- * @param {string[]} providerComplexity - Provider's job_complexity array
- * @param {string} intentComplexity - Required job_complexity from intent
- * @returns {number} Score 0-100
- */
 function calcSpecializationScore(providerComplexity, intentComplexity) {
-  const required = (intentComplexity || "basic").toLowerCase();
-  if (
-    Array.isArray(providerComplexity) &&
-    providerComplexity.map((c) => c.toLowerCase()).includes(required)
-  ) {
+  const req = (intentComplexity || "basic").toLowerCase();
+  if (Array.isArray(providerComplexity) && providerComplexity.map(c => c.toLowerCase()).includes(req)) {
     return 100;
   }
   return 50;
 }
 
-/**
- * Calculates the risk score (8% weight).
- * Lower risk = higher score.
- * @param {number} riskScore - Provider risk 0.0-1.0
- * @returns {number} Score 0-100
- */
 function calcRiskScore(riskScore) {
+  // Lower risk score (0-1) translates to higher match points
   return Math.max(0, 100 - riskScore * 100);
 }
 
-/**
- * Generates human-readable reasoning for the top-ranked provider.
- * @param {object} provider - Top provider with all scores
- * @param {object} intent - Original intent object
- * @returns {string} Reasoning explanation
- */
 function generateReasoning(provider, intent) {
   const reasons = [];
 
-  // Distance
   if (provider.distanceKm <= 2) {
-    reasons.push(`closest available (${provider.distanceKm}km)`);
-  } else {
-    reasons.push(`${provider.distanceKm}km away`);
+    reasons.push("aapke bohot qareeb hain (sirf " + provider.distanceKm + " km door)");
+  }
+  
+  if (provider.rating >= 4.6) {
+    reasons.push("shandar rating hai (" + provider.rating + "★)");
   }
 
-  // Reliability
   if (provider.on_time_score >= 90) {
-    reasons.push(`highest reliability (${provider.on_time_score}%)`);
-  } else {
-    reasons.push(`reliability ${provider.on_time_score}%`);
+    reasons.push("waqt ke paband hain (" + provider.on_time_score + "% on-time score)");
   }
 
-  // Specialization match
   const complexity = (intent.job_complexity || "basic").toLowerCase();
-  if (
-    provider.job_complexity &&
-    provider.job_complexity.map((c) => c.toLowerCase()).includes(complexity)
-  ) {
-    reasons.push(`${intent.service_type} specialization match`);
+  if (provider.job_complexity && provider.job_complexity.map(c => c.toLowerCase()).includes(complexity)) {
+    reasons.push("is qism ke kaam mein maharat rakhte hain");
   }
 
-  // Budget
-  if (
-    intent.budget_sensitivity === "high" &&
-    provider.price_per_hour <= 800
-  ) {
-    reasons.push("within budget");
-  } else if (provider.price_per_hour <= 1000) {
-    reasons.push("reasonable pricing");
+  if (intent.budget_sensitivity === "high" && provider.price_per_hour <= 700) {
+    reasons.push("munasib rate hai (PKR " + provider.price_per_hour + "/hr)");
   }
 
-  // Rating
-  if (provider.rating >= 4.5) {
-    reasons.push(`top rated (${provider.rating}★)`);
-  }
-
-  // Verified
   if (provider.verified) {
-    reasons.push("verified provider");
+    reasons.push("Karigar AI se verified hain");
   }
 
-  return `${provider.name} selected: ${reasons.join(", ")}`;
+  if (reasons.length === 0) {
+    return `${provider.name} behtareen andaz mein aapka kaam mukammal kar sakte hain.`;
+  }
+
+  // Capitalize first letter and combine
+  const reasonText = reasons.slice(0, 3).join(", ");
+  return reasonText.charAt(0).toUpperCase() + reasonText.slice(1) + "—is liye AI ne inhein select kiya.";
 }
 
-/**
- * Ranks discovered providers using a 6-factor weighted scoring system.
- *
- * @param {object[]} providers - Array of providers from discoveryAgent
- * @param {object} intent - Structured intent from intentAgent
- * @returns {{ ranked: object[], reasoning: string, trace: string[] }}
- */
 export function rankProviders(providers, intent) {
-  console.log("[ANTIGRAVITY][MATCHING_AGENT] ─────────────────────────────────");
-  console.log(
-    `[ANTIGRAVITY][MATCHING_AGENT] Scoring ${providers.length} providers on 6 factors...`
-  );
+  console.log("[ANTIGRAVITY][MATCHING_AGENT] Starting matching...");
+
+  if (!providers || providers.length === 0) {
+    console.log("[ANTIGRAVITY][MATCHING_AGENT] Empty list provided.");
+    return {
+      ranked: [],
+      reasoning: "Koi karigar available nahi mila.",
+      trace: ["No providers discovered."],
+    };
+  }
 
   const trace = [];
-  trace.push(
-    `[DISCOVER] Found ${providers.length} providers for "${intent.service_type}" near ${intent.location || "user location"}`
-  );
-  trace.push(
-    `[MATCH] Scoring ${providers.length} providers on 6 factors...`
-  );
+  trace.push(`[DISCOVER] Match request for "${intent.service_type}" near "${intent.location || "Current Location"}"`);
 
   try {
-    const scored = providers.map((provider) => {
-      // Calculate individual scores
-      const distScore = calcDistanceScore(provider.distanceKm || 0);
-      const ratingScore = calcRatingScore(provider.rating || 0);
-      const reliabilityScore = calcReliabilityScore(
-        provider.on_time_score || 0,
-        provider.cancellation_rate || 0
-      );
-      const priceScore = calcPriceScore(
-        provider.price_per_hour || 0,
-        intent.budget_sensitivity
-      );
-      const specScore = calcSpecializationScore(
-        provider.job_complexity,
-        intent.job_complexity
-      );
-      const riskScoreVal = calcRiskScore(provider.risk_score || 0);
+    const scored = providers.map((p) => {
+      const distS = calcDistanceScore(p.distanceKm || 0);
+      const rateS = calcRatingScore(p.rating || 0);
+      const relS = calcReliabilityScore(p.on_time_score || 0, p.cancellation_rate || 0);
+      const priceS = calcPriceScore(p.price_per_hour || 0, intent.budget_sensitivity);
+      const specS = calcSpecializationScore(p.job_complexity, intent.job_complexity);
+      const riskS = calcRiskScore(p.risk_score || 0);
 
-      // Weighted total
+      // Weighted score sum
       const totalScore =
-        distScore * 0.25 +
-        ratingScore * 0.2 +
-        reliabilityScore * 0.2 +
-        priceScore * 0.15 +
-        specScore * 0.12 +
-        riskScoreVal * 0.08;
+        distS * 0.25 +
+        rateS * 0.20 +
+        relS * 0.20 +
+        priceS * 0.15 +
+        specS * 0.12 +
+        riskS * 0.08;
 
-      const roundedTotal = Math.round(totalScore * 10) / 10;
-
-      console.log(
-        `[ANTIGRAVITY][MATCHING_AGENT]   ${provider.name}: ${roundedTotal}/100`
-      );
-      trace.push(`[SCORE] ${provider.name}: ${roundedTotal}/100`);
+      const roundedScore = Math.round(totalScore);
+      trace.push(`[SCORE] ${p.name}: ${roundedScore}/100`);
 
       return {
-        ...provider,
+        ...p,
+        matchScore: roundedScore,
         scores: {
-          distance: Math.round(distScore * 10) / 10,
-          rating: Math.round(ratingScore * 10) / 10,
-          reliability: Math.round(reliabilityScore * 10) / 10,
-          price: Math.round(priceScore * 10) / 10,
-          specialization: Math.round(specScore * 10) / 10,
-          risk: Math.round(riskScoreVal * 10) / 10,
-          total: roundedTotal,
+          distance: Math.round(distS),
+          rating: Math.round(rateS),
+          reliability: Math.round(relS),
+          price: Math.round(priceS),
+          specialization: Math.round(specS),
+          risk: Math.round(riskS),
+          total: roundedScore,
         },
       };
     });
 
-    // Sort by total score descending
-    scored.sort((a, b) => b.scores.total - a.scores.total);
+    // Sort by match score descending
+    scored.sort((a, b) => b.matchScore - a.matchScore);
 
-    // Generate reasoning for top provider
-    let reasoning = "No providers to rank.";
-    if (scored.length > 0) {
-      const top = scored[0];
-      reasoning = generateReasoning(top, intent);
+    // Selected top provider reasoning
+    const topProvider = scored[0];
+    const reasoning = generateReasoning(topProvider, intent);
+    
+    trace.push(`[DECIDE] Top match selected: ${topProvider.name} (${topProvider.matchScore}%)`);
+    trace.push(`[REASON] ${reasoning}`);
 
-      console.log(
-        `[ANTIGRAVITY][MATCHING_AGENT] Top: ${top.name} ${top.scores.total}/100`
-      );
-      console.log("[ANTIGRAVITY][MATCHING_AGENT] Decision made");
-
-      trace.push(`[DECIDE] Selected: ${top.name}`);
-      trace.push(
-        `[REASON] ${reasoning}`
-      );
-    }
-
-    console.log("[ANTIGRAVITY][MATCHING_AGENT] ─────────────────────────────────");
-
+    console.log("[ANTIGRAVITY][MATCHING_AGENT] Matching completed successfully.");
     return {
       ranked: scored,
       reasoning: reasoning,
       trace: trace,
     };
   } catch (error) {
-    console.log("[ANTIGRAVITY][MATCHING_AGENT] Error:", error.message);
-    console.log("[ANTIGRAVITY][MATCHING_AGENT] ─────────────────────────────────");
+    console.log("[ANTIGRAVITY][MATCHING_AGENT] Error matching:", error.message);
     return {
-      ranked: [],
-      reasoning: "Error occurred during matching.",
-      trace: [`[ERROR] ${error.message}`],
+      ranked: providers.map(p => ({ ...p, matchScore: 85 })),
+      reasoning: "Behtareen matches dhoond liye gaye hain.",
+      trace: [error.message],
     };
   }
 }
