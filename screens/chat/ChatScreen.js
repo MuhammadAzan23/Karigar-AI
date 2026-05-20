@@ -27,6 +27,7 @@ import Avatar from '../../components/ui/Avatar';
 import { extractIntent } from '../../agents/intentAgent';
 import { discoverProviders } from '../../agents/discoveryAgent';
 import { rankProviders } from '../../agents/matchingAgent';
+import { createAsyncGuard } from '../../utils/helpers';
 
 const SUGGESTIONS = [
   { id: '1', label: '❄️ AC Checkup', query: 'Mera AC thanda nahi kar raha, Clifton mein check karwana hai.' },
@@ -41,6 +42,9 @@ const KARACHI_LNG = 67.0011;
 
 export default function ChatScreen({ route, navigation }) {
   const flatListRef = useRef(null);
+  const sendGuardRef = useRef(createAsyncGuard());
+  const locationAbortRef = useRef(false);
+  
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
@@ -56,22 +60,35 @@ export default function ChatScreen({ route, navigation }) {
   const [thinkingStep, setThinkingStep] = useState('');
   const [selectedSuggestions, setSelectedSuggestions] = useState(SUGGESTIONS);
 
-  // Fetch coordinates
+  // Fetch coordinates — with proper cleanup
   useEffect(() => {
+    let isMounted = true;
+    
     (async () => {
       try {
         let { status } = await Location.requestForegroundPermissionsAsync();
+        if (!isMounted || locationAbortRef.current) return;
+        
         if (status === 'granted') {
           let loc = await Location.getCurrentPositionAsync({});
-          setUserCoords({
-            latitude: loc.coords.latitude,
-            longitude: loc.coords.longitude,
-          });
+          if (isMounted && !locationAbortRef.current) {
+            setUserCoords({
+              latitude: loc.coords.latitude,
+              longitude: loc.coords.longitude,
+            });
+          }
         }
       } catch (e) {
-        console.log('Location bypass in ChatScreen:', e.message);
+        if (isMounted) {
+          console.log('[CHAT_SCREEN] Location permission error:', e.message);
+        }
       }
     })();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Handle route params prefill
@@ -123,46 +140,54 @@ export default function ChatScreen({ route, navigation }) {
 
   const sendMessage = useCallback(async (text) => {
     if (!text || !text.trim()) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    const userMsg = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: text.trim(),
-      time: 'Abhi',
-    };
+    // Prevent duplicate sends (race condition guard)
+    const result = await sendGuardRef.current.guard(async () => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    setLoading(true);
-
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-
-    try {
-      const pipelineOutput = await runMultiAgentPipeline(text.trim());
-      
-      const aiMsg = {
-        id: (Date.now() + 1).toString(),
-        ...pipelineOutput,
+      const userMsg = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: text.trim(),
+        time: 'Abhi',
       };
 
-      setMessages(prev => [...prev, aiMsg]);
-      setSelectedSuggestions([]); // Hide chips once conversation begins
-    } catch (error) {
-      console.log('Pipeline error:', error);
-      setShowThinking(false);
-      setMessages(prev => [
-        ...prev,
-        {
-          id: (Date.now() + 2).toString(),
-          role: 'assistant',
-          content: 'Network masla ho gaya. Dobara try kijiye.',
-          time: 'Abhi',
-        },
-      ]);
-    } finally {
-      setLoading(false);
+      setMessages(prev => [...prev, userMsg]);
+      setInput('');
+      setLoading(true);
+
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+
+      try {
+        const pipelineOutput = await runMultiAgentPipeline(text.trim());
+        
+        const aiMsg = {
+          id: (Date.now() + 1).toString(),
+          ...pipelineOutput,
+        };
+
+        setMessages(prev => [...prev, aiMsg]);
+        setSelectedSuggestions([]); // Hide chips once conversation begins
+      } catch (error) {
+        console.log('[CHAT_SCREEN] Pipeline error:', error);
+        setShowThinking(false);
+        setMessages(prev => [
+          ...prev,
+          {
+            id: (Date.now() + 2).toString(),
+            role: 'assistant',
+            content: 'Network masla ho gaya. Dobara try kijiye.',
+            time: 'Abhi',
+          },
+        ]);
+      } finally {
+        setLoading(false);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      }
+    });
+
+    if (result === null && sendGuardRef.current.isGuarded()) {
+      console.log('[CHAT_SCREEN] Message send already in progress');
     }
   }, [userCoords]);
 

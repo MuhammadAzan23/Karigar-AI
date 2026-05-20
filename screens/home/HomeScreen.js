@@ -32,11 +32,13 @@ export default function HomeScreen({ navigation }) {
       .slice(0, 4);
     setRecentProviders(recommended);
 
-    // Check Firebase for any active en-route bookings
+    // Check Firebase for any active en-route bookings — with proper cleanup
+    let unsubscribe = null;
+    
     try {
       const db = getFirebaseDB();
       const bookingsRef = ref(db, 'bookings');
-      onValue(bookingsRef, (snapshot) => {
+      unsubscribe = onValue(bookingsRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
           const list = Object.keys(data).map(key => ({ id: key, ...data[key] }));
@@ -46,8 +48,15 @@ export default function HomeScreen({ navigation }) {
         }
       });
     } catch (e) {
-      console.log('Firebase connection bypassed in home:', e);
+      console.log('[HOME_SCREEN] Firebase connection error:', e.message);
     }
+
+    // Cleanup: Unsubscribe from Firebase when component unmounts
+    return () => {
+      if (unsubscribe && typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const handleSearchPress = () => {

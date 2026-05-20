@@ -23,6 +23,8 @@ export default function Button({
   size = 'md', // 'sm' | 'md' | 'lg'
   fullWidth = true,
   icon = null,
+  accessibilityLabel = null,
+  accessibilityHint = null,
   style = {},
 }) {
   const scaleValue = useRef(new Animated.Value(1)).current;
@@ -94,6 +96,10 @@ export default function Button({
         onPressOut={handlePressOut}
         onPress={onPress}
         disabled={disabled || loading}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel || title}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{ disabled: disabled || loading }}
         style={[getButtonStyles(), getSizeStyles(), style]}
       >
         {loading ? (

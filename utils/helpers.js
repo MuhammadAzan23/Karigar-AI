@@ -175,3 +175,128 @@ export function getAreaCoordinates(area) {
 
   return areaCoords["karachi"];
 }
+
+/**
+ * Debounce function to prevent multiple rapid calls
+ * Useful for form submissions, searches, API calls
+ */
+export function debounce(func, wait = 500) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+/**
+ * Throttle function to limit function calls
+ * Useful for scroll events, window resize, etc.
+ */
+export function throttle(func, limit = 500) {
+  let inThrottle;
+  return function(...args) {
+    if (!inThrottle) {
+      func.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+}
+
+/**
+ * Create an async operation guard to prevent race conditions
+ * Prevents duplicate API calls when button is mashed
+ */
+export function createAsyncGuard() {
+  let isProcessing = false;
+
+  const guard = async (asyncFn) => {
+    if (isProcessing) {
+      console.log('[ASYNC_GUARD] Operation already in progress');
+      return null;
+    }
+
+    isProcessing = true;
+    try {
+      const result = await asyncFn();
+      return result;
+    } finally {
+      isProcessing = false;
+    }
+  };
+
+  const isGuarded = () => isProcessing;
+  return { guard, isGuarded };
+}
+
+/**
+ * Validate email address
+ */
+export function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+/**
+ * Validate Pakistani phone number
+ * Accepts: 03001234567, +923001234567, 03XX-XXXXXXX
+ */
+export function isValidPhoneNumber(phone) {
+  if (!phone) return false;
+  const phoneRegex = /^(\+92|0)?3\d{2}\d{7}$/;
+  return phoneRegex.test(phone.replace(/[-\s]/g, ''));
+}
+
+/**
+ * Safe JSON parse with fallback
+ */
+export function safeJSONParse(jsonString, fallback = null) {
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.log('[SAFE_JSON_PARSE] Failed to parse JSON:', error.message);
+    return fallback;
+  }
+}
+
+/**
+ * Retry an async operation with exponential backoff
+ */
+export async function retryWithBackoff(
+  asyncFn,
+  maxRetries = 3,
+  initialDelayMs = 1000
+) {
+  let lastError;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await asyncFn();
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries - 1) {
+        const delayMs = initialDelayMs * Math.pow(2, attempt);
+        console.log(
+          `[RETRY] Attempt ${attempt + 1} failed. Retrying in ${delayMs}ms...`
+        );
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
+/**
+ * Format price with PKR currency
+ */
+export function formatPrice(price) {
+  if (typeof price !== 'number' || price < 0) {
+    return 'PKR 0';
+  }
+  return `PKR ${price.toLocaleString('en-PK')}`;
+}
